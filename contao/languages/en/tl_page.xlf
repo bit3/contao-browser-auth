@@ -1,0 +1,27 @@
+<?xml version="1.0"?>
+<xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" version="1.2">
+  <file original="system/modules/browser-auth/languages/de/tl_page.php" source-language="en" datatype="php" date="2012-11-08T21:49:41+00:00" target-language="en">
+    <body>
+      <trans-unit id="tl_page.browser_auth_legend">
+        <source xml:lang="en">Browser authentication</source>
+        <target xml:lang="en">Browser authentication</target>
+      </trans-unit>
+      <trans-unit id="tl_page.browser_auth_enabled.0">
+        <source xml:lang="en">Enable browser authentication</source>
+        <target xml:lang="en">Enable browser authentication</target>
+      </trans-unit>
+      <trans-unit id="tl_page.browser_auth_enabled.1">
+        <source xml:lang="en">Choose if you want browser based authentication for this root.</source>
+        <target xml:lang="en">Choose if you want browser based authentication for this root.</target>
+      </trans-unit>
+      <trans-unit id="tl_page.browser_auth_module.0">
+        <source xml:lang="en">Authentication module</source>
+        <target xml:lang="en">Authentication module</target>
+      </trans-unit>
+      <trans-unit id="tl_page.browser_auth_module.1">
+        <source xml:lang="en">Please choose the used authentication module.</source>
+        <target xml:lang="en">Please choose the used authentication module.</target>
+      </trans-unit>
+    </body>
+  </file>
+</xliff>
