@@ -21,60 +21,62 @@ class Auth extends \Frontend
 
 	public function fakeLogin()
 	{
-		$rootPage = $this->getRootPageFromUrl();
+		if (TL_MODE == 'FE') {
+			$rootPage = $this->getRootPageFromUrl();
 
-		if ($rootPage && is_array($GLOBALS['BROWSER_AUTH_MODULES'])) {
-			foreach ($GLOBALS['BROWSER_AUTH_MODULES'] as $authModuleClass) {
-				$authModule = new $authModuleClass;
-				$member = $authModule->authenticate($rootPage);
+			if ($rootPage && is_array($GLOBALS['BROWSER_AUTH_MODULES'])) {
+				foreach ($GLOBALS['BROWSER_AUTH_MODULES'] as $authModuleClass) {
+					$authModule = new $authModuleClass;
+					$member = $authModule->authenticate($rootPage);
 
-				if ($member) {
-					$database = \Database::getInstance();
-					$cookieName = 'FE_USER_AUTH';
-					$ip = \Environment::get('ip');
-					$time = time();
+					if ($member) {
+						$database = \Database::getInstance();
+						$cookieName = 'FE_USER_AUTH';
+						$ip = \Environment::get('ip');
+						$time = time();
 
-					// Generate the cookie hash
-					$hash = sha1(session_id() . (!$GLOBALS['TL_CONFIG']['disableIpCheck'] ? $ip : '') . $cookieName);
+						// Generate the cookie hash
+						$hash = sha1(session_id() . (!$GLOBALS['TL_CONFIG']['disableIpCheck'] ? $ip : '') . $cookieName);
 
-					if ($hash == \Input::cookie($cookieName)) {
-						$session = $database
-							->prepare('SELECT * FROM tl_session WHERE hash=? AND name=?')
-							->executeUncached($hash, $cookieName);
-						$update = array();
+						if ($hash == \Input::cookie($cookieName)) {
+							$session = $database
+								->prepare('SELECT * FROM tl_session WHERE hash=? AND name=?')
+								->executeUncached($hash, $cookieName);
+							$update = array();
 
-						if ($session->numRows) {
-							// Validate the session
-							if ($session->sessionID != session_id()) {
-								$update['sessionID'] = session_id();
+							if ($session->numRows) {
+								// Validate the session
+								if ($session->sessionID != session_id()) {
+									$update['sessionID'] = session_id();
+								}
+								if (!$GLOBALS['TL_CONFIG']['disableIpCheck'] && $session->ip != $ip) {
+									$update['ip'] = $ip;
+								}
+								if ($session->hash != $hash) {
+									$update['hash'] = $hash;
+								}
+								if (($session->tstamp + $GLOBALS['TL_CONFIG']['sessionTimeout']) < $time) {
+									$update['tstamp'] = $time;
+								}
+								if (count($update)) {
+									$database
+										->prepare('UPDATE tl_session %s WHERE hash=? AND name=?')
+										->set($update)
+										->execute($hash, $cookieName);
+								}
+								break;
 							}
-							if (!$GLOBALS['TL_CONFIG']['disableIpCheck'] && $session->ip != $ip) {
-								$update['ip'] = $ip;
-							}
-							if ($session->hash != $hash) {
-								$update['hash'] = $hash;
-							}
-							if (($session->tstamp + $GLOBALS['TL_CONFIG']['sessionTimeout']) < $time) {
-								$update['tstamp'] = $time;
-							}
-							if (count($update)) {
-								$database
-									->prepare('UPDATE tl_session %s WHERE hash=? AND name=?')
-									->set($update)
-									->execute($hash, $cookieName);
-							}
-							break;
 						}
+
+						// fake a new session
+						$database
+							->prepare('INSERT INTO tl_session (pid, tstamp, name, sessionID, ip, hash) VALUES (?, ?, ?, ?, ?, ?)')
+							->execute($member->id, $time, $cookieName, session_id(), $ip, $hash);
+
+						// fake authentication cookie
+						$this->setCookie($cookieName, $hash, ($time + $GLOBALS['TL_CONFIG']['sessionTimeout']), null, null, false, true);
+						break;
 					}
-
-					// fake a new session
-					$database
-						->prepare('INSERT INTO tl_session (pid, tstamp, name, sessionID, ip, hash) VALUES (?, ?, ?, ?, ?, ?)')
-						->execute($member->id, $time, $cookieName, session_id(), $ip, $hash);
-
-					// fake authentication cookie
-					$this->setCookie($cookieName, $hash, ($time + $GLOBALS['TL_CONFIG']['sessionTimeout']), null, null, false, true);
-					break;
 				}
 			}
 		}
