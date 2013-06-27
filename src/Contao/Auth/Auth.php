@@ -70,8 +70,14 @@ class Auth extends \Frontend
 
 						// fake a new session
 						$database
-							->prepare('INSERT INTO tl_session (pid, tstamp, name, sessionID, ip, hash) VALUES (?, ?, ?, ?, ?, ?)')
-							->execute($member->id, $time, $cookieName, session_id(), $ip, $hash);
+							->prepare(
+								'INSERT INTO tl_session (pid, tstamp, name, sessionID, ip, hash)
+								 VALUES (?, ?, ?, ?, ?, ?)
+								 ON DUPLICATE KEY UPDATE tstamp=?, name=?, sessionID=?, ip=?'
+							)
+							->execute(
+								$member->id, $time, $cookieName, session_id(), $ip, $hash, $time, $cookieName, session_id(), $ip
+							);
 
 						// fake authentication cookie
 						$this->setCookie($cookieName, $hash, ($time + $GLOBALS['TL_CONFIG']['sessionTimeout']), null, null, false, true);
